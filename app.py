@@ -12,6 +12,7 @@ app.secret_key = secrets.token_urlsafe(24)
 
 csrf = CSRFProtect(app)
 
+# Global User Dictionary
 userDict = {}
 
 
