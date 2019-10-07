@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Registration</title>
+</head>
+<body>
+    <H1> Spell Check User Registration:</H1>
+
+    <form method="POST" action="/register">
+    {{ form.csrf_token }}
+    {{ form.uname.label }} {{ form.uname(size=40) }} <br>
+    {{ form.pword.label }} {{ form.pword(size=40) }} <br>
+    {{ form.twofa.label }} {{ form.twofa(size=8) }} <br>
+    <input type="submit" value="Submit">
+
+</form>
+</body>
+</html>

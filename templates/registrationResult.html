@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Registration Result Display</title>
+</head>
+<body>
+
+  <h2> The status of your user registration is: </h2>
+  <h2 id="success"> {{success}}</h2>
+
+  {% if success == 'Success' %}
+      <p> You may now login  <a href="/login"> Login </a> </p>
+  {% endif %}
+
+</body>
+</html>

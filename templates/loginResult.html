@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Result Display</title>
+</head>
+<body>
+
+  <h2> The status of your login  is: </h2>
+  <h2 id="result"> {{result}} </h2>
+
+   {% if result == 'Success' %}
+        <a href="/spell_check"> Spell Check </a>
+   {% else %}
+       <p> To try different credentials login <a href="/login"> here </a></p>
+       <p> If you have not registered, register <a href="/register"> here </a></p>
+    {% endif %}
+
+</body>
+</html>
