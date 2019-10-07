@@ -18,7 +18,7 @@ userDict = {}
 class UserForm(FlaskForm):
     uname = StringField('User Name:', validators=[DataRequired()])
     pword = StringField('Password: ', validators=[DataRequired()])
-    twofa = StringField('2FA Token:', validators=[DataRequired()], id='2fa')
+    twofa = StringField('2FA Token:', validators=[], id='2fa')
 
 
 @app.route('/register', methods=('GET', 'POST'))
@@ -33,7 +33,7 @@ def register():
         pword = form.pword.data
         twofa = form.twofa.data
 
-        if (user in userDict) or (not user) or (not pword) or not (twofa):
+        if (user in userDict) or (not user) or (not pword):
             return render_template('registrationResult.html', success="Failure")
         else:
             userDict[user] = {'pword' : pword, '2fa' : twofa}
