@@ -1,4 +1,5 @@
 from flask import Flask, request, redirect, render_template
+from flask_login import LoginManager, login_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField
 from wtforms.validators import DataRequired
@@ -7,12 +8,50 @@ import secrets
 import subprocess
 import os
 
+
+
 app = Flask(__name__)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.session_protection = "strong"
+
 app.secret_key = secrets.token_urlsafe(24)
+
+
 
 csrf = CSRFProtect(app)
 
-# Global User Dictionary
+
+class User:
+    def __init__(self, uname, pword, twofa):
+        self.uname = uname
+        self.pword = pword
+        self.twofa = twofa
+
+    def getPassword(self):
+        return self.pword
+
+    def get2FA(self):
+        return self.twofa
+
+    def getUname(self):
+        return self.uname
+
+    def get_id(self):
+        return self.uname
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+
+# Globals
 userDict = {}
 
 
@@ -22,11 +61,54 @@ class UserForm(FlaskForm):
     twofa = StringField('2FA Token:', validators=[], id='2fa')
 
 
+def addUser(uname, pword, twofa):
+    global userDict
+    userDict[uname] = User(uname, pword, twofa)
+
+
+def getUser(uname):
+    global userDict
+    return userDict[uname]
+
+
+def userExists(uname):
+    global userDict
+    if uname in userDict:
+        return True
+    else:
+        return False
+
+
+def passwordMatch(uname, pword):
+    global userDict
+    if (userDict[uname].getPassword() == pword):
+        return True
+    else:
+        return False
+
+
+def twofaMatch(uname, twofa):
+    global userDict
+    if (userDict[uname].get2FA() == twofa):
+        return True
+    else:
+        return False
+
+
+@login_manager.user_loader
+def load_user(id):
+    global userDict
+    if (id in userDict.keys()):
+        return userDict[id]
+    else:
+        return None
+
+
 @app.route('/register', methods=('GET', 'POST'))
 def register():
     form = UserForm()
     if form.validate_on_submit():
-        #return redirect('/success')
+        # return redirect('/success')
 
         global userDict
 
@@ -34,10 +116,10 @@ def register():
         pword = form.pword.data
         twofa = form.twofa.data
 
-        if (user in userDict) or (not user) or (not pword):
+        if (userExists(user)) or (not user) or (not pword):
             return render_template('registrationResult.html', success="Failure")
         else:
-            userDict[user] = {'pword' : pword, '2fa' : twofa}
+            addUser(user, pword, twofa)
             return render_template('registrationResult.html', success="Success")
 
     return render_template('registerForm.html', form=form)
@@ -55,11 +137,11 @@ def login():
         pword = form.pword.data
         twofa = form.twofa.data
 
-        if (user in userDict):
+        if userExists(user):
 
-            userInfo = userDict[user]
-            if (userInfo['pword'] == pword):
-                if (userInfo['2fa'] == twofa):
+            if passwordMatch(user, pword):
+                if twofaMatch(user, twofa):
+                    login_user(getUser(user))
                     return render_template('loginResult.html', result="Success")
                 else:
                     return render_template('loginResult.html', result="Two-factor Failure")
@@ -76,8 +158,8 @@ class spellCheckForm(FlaskForm):
 
 
 @app.route('/spell_check', methods=('GET', 'POST'))
+@login_required
 def spellcheck():
-
     form = spellCheckForm()
 
     if form.validate_on_submit():
@@ -91,7 +173,7 @@ def spellcheck():
         f.close()
 
         process = subprocess.run(['./a.out', 'tempUserInput', 'wordlist.txt'], check=True, stdout=subprocess.PIPE,
-             universal_newlines=True)
+                                 universal_newlines=True)
         output = process.stdout
 
         os.remove("tempUserInput")
