@@ -1,5 +1,5 @@
 from flask import Flask, request, redirect, render_template
-from flask_login import LoginManager, login_user, login_required
+from flask_login import LoginManager, login_user, login_required, logout_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField
 from wtforms.validators import DataRequired
@@ -151,6 +151,11 @@ def login():
             return render_template('loginResult.html', result="Incorrect")
 
     return render_template('userLoginForm.html', form=form)
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect('/login')
 
 
 class spellCheckForm(FlaskForm):
