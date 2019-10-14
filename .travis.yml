@@ -1,0 +1,17 @@
+language: generic
+
+install:
+    - sudo pip3 install tox-travis
+    - sudo pip3 install -r requirements.txt
+ 
+script: 
+    - flask run &
+    - bg
+    - tox
+    - kill $!
+
+
+
+  
+
+
