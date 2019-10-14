@@ -1,2 +1,6 @@
-# AppSecAssignment2
-NYU Application Security Fall 2019 Assignment 2
+# AppSecAssignment1
+NYU Application Security Fall 2019 Assignment 1 - Spellchecker
+
+Travis CI Status:
+
+[![Build Status](https://www.travis-ci.com/crazyzete/AppSecAssignment2.svg?branch=master)](https://www.travis-ci.com/crazyzete/AppSecAssignment2)
