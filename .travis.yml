@@ -3,8 +3,8 @@ language: generic
 install:
     - sudo apt-get update
     - sudo apt-get install python3-pip
-    - sudo pip3 install --upgrade pip
-    - python3 -m pip install --upgrade pip setuptools wheel
+    - sudo -H pip3 install --upgrade pip
+    - sudo -H python3 -m pip install --upgrade pip setuptools wheel
     - sudo -H pip3 install tox-travis
     - sudo -H pip3 install -r requirements.txt
  
