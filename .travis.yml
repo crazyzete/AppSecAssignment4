@@ -10,9 +10,8 @@ install:
  
 script: 
     - flask run &
-    - bg
     - tox
-    - kill $!
+   
 
 
 
