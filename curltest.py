@@ -9,8 +9,79 @@ class MyTestCase(unittest.TestCase):
      pword = "test"
      twofa = "123456789"
 
+     def tearDown(self):
+        process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt',
+                                  'http://127.0.0.1:5000/logout'],
+                                 check=True, stdout=subprocess.PIPE,
+                                 universal_newlines=True)
 
-    #Test Case Verifies Register Form returned by verifying
+     # Test Case Verifies Login Fails
+     def test_login_fail(self):
+         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', 'http://127.0.0.1:5000/register'],
+                                  check=True, stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+         output = process.stdout
+
+         soup = BeautifulSoup(output, features='html.parser')
+
+         csrfToken = soup.find(id='csrf_token')['value']
+         postString = "uname=" + self.uname + "pfail&pword=" + self.pword + "&twofa" + self.twofa + "&csrf_token=" + csrfToken
+
+         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
+                                   'http://127.0.0.1:5000/register'],
+                                  check=True, stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+
+         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', 'http://127.0.0.1:5000/login'],
+                                  check=True, stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+
+         output = process.stdout
+         soup = BeautifulSoup(output, features='html.parser')
+         csrfToken = soup.find(id='csrf_token')['value']
+         self.assertEqual('User Login', soup.title.string)
+
+         postString = "uname=" + self.uname + "pfail&pword=" + self.pword + "wrong&twofa=" + self.twofa + "&csrf_token=" + csrfToken
+
+         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
+                                   'http://127.0.0.1:5000/login'],
+                                  check=True, stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+
+         output = process.stdout
+         soup = BeautifulSoup(output, features='html.parser')
+
+         success = soup.find(id='result')
+         self.assertEqual('Login Result Display', soup.title.string)
+         self.assertIsNotNone(success)
+         self.assertEqual("incorrect", success.get_text().lower().strip())
+
+         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', 'http://127.0.0.1:5000/login'],
+                                  check=True, stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+
+         output = process.stdout
+         soup = BeautifulSoup(output, features='html.parser')
+         csrfToken = soup.find(id='csrf_token')['value']
+         self.assertEqual('User Login', soup.title.string)
+
+         postString = "uname=" + self.uname + "pfail&pword=" + self.pword + "&twofa=" + self.twofa + "999&csrf_token=" + csrfToken
+
+         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
+                                   'http://127.0.0.1:5000/login'],
+                                  check=True, stdout=subprocess.PIPE,
+                                  universal_newlines=True)
+
+         output = process.stdout
+         soup = BeautifulSoup(output, features='html.parser')
+
+         success = soup.find(id='result')
+         self.assertEqual('Login Result Display', soup.title.string)
+         self.assertIsNotNone(success)
+         self.assertEqual("two-factor failure", success.get_text().lower().strip())
+
+
+     #Test Case Verifies Register Form returned by verifying
      def test_register_form(self):
         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', 'http://127.0.0.1:5000/register'], check=True, stdout=subprocess.PIPE,
                                  universal_newlines=True)
@@ -34,7 +105,7 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual('User Registration', soup.title.string)
 
             csrfToken = soup.find(id='csrf_token')['value']
-            postString = "uname=" + self.uname + "2&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+            postString = "uname=" + self.uname + "2&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
             process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                       'http://127.0.0.1:5000/register'],
@@ -51,7 +122,7 @@ class MyTestCase(unittest.TestCase):
             self.assertEqual('User Registration', soup.title.string)
 
             csrfToken = soup.find(id='csrf_token')['value']
-            postString = "uname=" + self.uname + "2&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+            postString = "uname=" + self.uname + "2&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
             process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                       'http://127.0.0.1:5000/register'],
@@ -74,7 +145,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual('User Registration', soup.title.string)
 
         csrfToken = soup.find(id='csrf_token')['value']
-        postString = "uname=" + self.uname + "&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+        postString = "uname=" + self.uname + "&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                   'http://127.0.0.1:5000/register'],
@@ -96,7 +167,7 @@ class MyTestCase(unittest.TestCase):
         soup = BeautifulSoup(output, features='html.parser')
 
         csrfToken = soup.find(id='csrf_token')['value']
-        postString = "uname=" + self.uname + "3&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+        postString = "uname=" + self.uname + "3&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                   'http://127.0.0.1:5000/register'],
@@ -112,7 +183,7 @@ class MyTestCase(unittest.TestCase):
         csrfToken = soup.find(id='csrf_token')['value']
         self.assertEqual('User Login', soup.title.string)
 
-        postString = "uname=" + self.uname + "3&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+        postString = "uname=" + self.uname + "3&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                   'http://127.0.0.1:5000/login'],
@@ -136,7 +207,7 @@ class MyTestCase(unittest.TestCase):
         soup = BeautifulSoup(output, features='html.parser')
 
         csrfToken = soup.find(id='csrf_token')['value']
-        postString = "uname=" + self.uname + "4&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+        postString = "uname=" + self.uname + "4&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                   'http://127.0.0.1:5000/register'],
@@ -152,7 +223,7 @@ class MyTestCase(unittest.TestCase):
         csrfToken = soup.find(id='csrf_token')['value']
         self.assertEqual('User Login', soup.title.string)
 
-        postString = "uname=" + self.uname + "4&pword=" + self.pword + "&2fa=" + self.twofa + "&csrf_token=" + csrfToken
+        postString = "uname=" + self.uname + "4&pword=" + self.pword + "&twofa=" + self.twofa + "&csrf_token=" + csrfToken
 
         process = subprocess.run(['curl', '-b', 'cookies.txt', '-c', 'cookies.txt', '-d', postString,
                                   'http://127.0.0.1:5000/login'],
@@ -206,6 +277,7 @@ class MyTestCase(unittest.TestCase):
         output = process.stdout
         soup = BeautifulSoup(output, features='html.parser')
         self.assertEqual('Redirecting...', soup.title.string)
+
 
 if __name__ == '__main__':
     unittest.main()

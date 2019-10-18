@@ -89,7 +89,7 @@ def passwordMatch(uname, pword):
 
 def twofaMatch(uname, twofa):
     global userDict
-    if (userDict[uname].get2FA() == twofa):
+    if userDict[uname].get2FA() == twofa:
         return True
     else:
         return False
@@ -138,7 +138,6 @@ def login():
         twofa = form.twofa.data
 
         if userExists(user):
-
             if passwordMatch(user, pword):
                 if twofaMatch(user, twofa):
                     login_user(getUser(user))
