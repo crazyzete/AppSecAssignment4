@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, make_response, Response
 from flask_login import LoginManager, login_user, login_required, logout_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField
@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 import secrets
 import subprocess
 import os
+from passlib.hash import sha256_crypt
 
 
 
@@ -14,11 +15,8 @@ app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
-login_manager.session_protection = "strong"
 
 app.secret_key = secrets.token_urlsafe(24)
-
-
 
 csrf = CSRFProtect(app)
 
@@ -63,7 +61,7 @@ class UserForm(FlaskForm):
 
 def addUser(uname, pword, twofa):
     global userDict
-    userDict[uname] = User(uname, pword, twofa)
+    userDict[uname] = User(uname, sha256_crypt.hash(pword), twofa)
 
 
 def getUser(uname):
@@ -81,7 +79,7 @@ def userExists(uname):
 
 def passwordMatch(uname, pword):
     global userDict
-    if (userDict[uname].getPassword() == pword):
+    if sha256_crypt.verify(pword, userDict[uname].getPassword()):
         return True
     else:
         return False
@@ -103,6 +101,17 @@ def load_user(id):
     else:
         return None
 
+def secureResponse(render):
+    response = make_response(render)
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    #response.headers['Content-Security-Policy'] = "default-src '127.0.0.1:5000'"
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
+
+@app.errorhandler(404)
+def not_found(e):
+    return secureResponse(render_template("PageNotFound.html"))
 
 @app.route('/register', methods=('GET', 'POST'))
 def register():
@@ -117,12 +126,12 @@ def register():
         twofa = form.twofa.data
 
         if (userExists(user)) or (not user) or (not pword):
-            return render_template('registrationResult.html', success="Failure")
+            return secureResponse(render_template('registrationResult.html', success="Failure"))
         else:
             addUser(user, pword, twofa)
-            return render_template('registrationResult.html', success="Success")
+            return secureResponse(render_template('registrationResult.html', success="Success"))
 
-    return render_template('registerForm.html', form=form)
+    return secureResponse(render_template('registerForm.html', form=form))
 
 
 @app.route('/login', methods=('GET', 'POST'))
@@ -141,15 +150,15 @@ def login():
             if passwordMatch(user, pword):
                 if twofaMatch(user, twofa):
                     login_user(getUser(user))
-                    return render_template('loginResult.html', result="Success")
+                    return secureResponse(render_template('loginResult.html', result="Success"))
                 else:
-                    return render_template('loginResult.html', result="Two-factor Failure")
+                    return secureResponse(render_template('loginResult.html', result="Two-factor Failure"))
             else:
-                return render_template('loginResult.html', result="Incorrect")
+                return secureResponse(render_template('loginResult.html', result="Incorrect"))
         else:
-            return render_template('loginResult.html', result="Incorrect")
+            return secureResponse(render_template('loginResult.html', result="Incorrect"))
 
-    return render_template('userLoginForm.html', form=form)
+    return secureResponse(render_template('userLoginForm.html', form=form))
 
 @app.route('/logout')
 def logout():
@@ -171,7 +180,6 @@ def spellcheck():
 
         text = form.inputtext.data
 
-        # TODO: If can get a user info, append that to file
         f = open("tempUserInput", "w")
         f.write(text)
         f.close()
@@ -184,46 +192,11 @@ def spellcheck():
 
         misspelledOut = output.replace("\n", ", ").strip().strip(',')
 
-        return render_template('spellCheckResult.html', misspelled=misspelledOut, textout=text)
+        return secureResponse(render_template('spellCheckResult.html', misspelled=misspelledOut, textout=text))
 
     else:
-        return render_template('spellCheckForm.html', form=form)
+        return secureResponse(render_template('spellCheckForm.html', form=form))
 
-
-# @app.route('/')
-# def index():
-#    f = open("tempUserInput", "w")
-#    f.write("Matthew, the big brown dkcu si in the huouse.")
-#    f.close()
-
-#    process = subprocess.run(['./a.out', 'tempUserInput',
-#                              'wordlist.txt'], check=True,
-#                             stdout=subprocess.PIPE, universal_newlines=True)
-#    output = process.stdout
-
-#    os.remove("tempUserInput")
-
-#    formatOutput = output.replace("\n", ", ").strip().strip(',')
-
-#   return formatOutput
-
-
-# @app.route('/add')
-# def add():
-#    global userCount
-#    global userDict
-#    global usrlock
-
-#    usrlock.acquire()
-#    userCount = userCount + 1
-#    userDict[userCount] = str(userCount)
-
-#    userStr = str(userCount) + ": "
-#    for key in userDict:
-#        userStr = userStr + userDict[key]
-
-#    usrlock.release()
-#   return userStr
 
 
 if __name__ == '__main__':
