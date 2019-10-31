@@ -1,5 +1,5 @@
 from flask import Flask, request, redirect, render_template, make_response, Response
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField
 from wtforms.validators import DataRequired
@@ -7,21 +7,42 @@ from flask_wtf.csrf import CSRFProtect
 import secrets
 import subprocess
 import os
+import datetime
 from passlib.hash import sha256_crypt
-
+from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
+
+
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
 app.secret_key = secrets.token_urlsafe(24)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///theDB.db'
 
 csrf = CSRFProtect(app)
 
 
-class User:
+db = SQLAlchemy()
+
+class User(UserMixin, db.Model):
+    """Model for user accounts."""
+
+    __tablename__ = 'users'
+
+    user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    uname = db.Column(db.String(25), nullable=False, unique=True)
+
+    pword = db.Column(db.String(80), nullable=False)
+
+    twofa = db.Column(db.String(25))
+
+    isAdmin = db.Column(db.Boolean, nullable=False)
+
     def __init__(self, uname, pword, twofa):
         self.uname = uname
         self.pword = pword
@@ -37,21 +58,40 @@ class User:
         return self.uname
 
     def get_id(self):
-        return self.uname
+        return self.getUname()
 
-    def is_authenticated(self):
-        return True
+    # I'm not including a seperate SALT, the project requirements do not specify it. I am using passlib which generates
+    # a hash including the salt and automatically handles that part.
 
-    def is_active(self):
-        return True
+    def __repr__(self):
+        return '<User {}>'.format(self.username)
 
-    def is_anonymous(self):
-        return False
+class LoginRecord(db.Model):
+    __tablename__ = 'login_records'
+    record_number =  db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    log_on = db.Column(db.DateTime, nullable=False)
+    log_off = db.Column(db.DateTime, nullable=True)
+    user = db.relationship(User)
+
+class QueryRecord(db.Model):
+    __tablename__ = 'query_records'
+    record_number =  db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    query_text = db.Column(db.Text, nullable=True)
+    query_result  = db.Column(db.Text, nullable=True)
+    user = db.relationship(User)
 
 
-# Globals
-userDict = {}
 
+
+with app.app_context():
+    db.init_app(app)
+    db.create_all()
+    adminUser = User('admin', sha256_crypt.hash('Administrator@1'), '12345678901')
+    adminUser.isAdmin = True
+    db.session.add(adminUser)
+    db.session.commit()
 
 class UserForm(FlaskForm):
     uname = StringField('User Name:', validators=[DataRequired()])
@@ -60,34 +100,20 @@ class UserForm(FlaskForm):
 
 
 def addUser(uname, pword, twofa):
-    global userDict
-    userDict[uname] = User(uname, sha256_crypt.hash(pword), twofa)
+    user = User(uname, sha256_crypt.hash(pword), twofa)
+    user.isAdmin = False
+    db.session.add(user)
+    db.session.commit()
 
-
-def getUser(uname):
-    global userDict
-    return userDict[uname]
-
-
-def userExists(uname):
-    global userDict
-    if uname in userDict:
+def passwordMatch(user, pword):
+    if sha256_crypt.verify(pword, user.getPassword()):
         return True
     else:
         return False
 
 
-def passwordMatch(uname, pword):
-    global userDict
-    if sha256_crypt.verify(pword, userDict[uname].getPassword()):
-        return True
-    else:
-        return False
-
-
-def twofaMatch(uname, twofa):
-    global userDict
-    if userDict[uname].get2FA() == twofa:
+def twofaMatch(user, twofa):
+    if user.get2FA() == twofa:
         return True
     else:
         return False
@@ -95,11 +121,29 @@ def twofaMatch(uname, twofa):
 
 @login_manager.user_loader
 def load_user(id):
-    global userDict
-    if (id in userDict.keys()):
-        return userDict[id]
-    else:
-        return None
+    existing_user = User.query.filter_by(uname=id).first()
+    return existing_user
+
+def addLogonRecord(uname):
+    record = LoginRecord()
+    record.user_id = uname
+    record.log_on = datetime.datetime.utcnow()
+    db.session.add(record)
+    db.session.commit()
+
+def updateLogonRecordAtLogoff(uname):
+   earliestLogin = LoginRecord.query.filter_by(user_id=uname, log_off=None).order_by(LoginRecord.log_on).first()
+   earliestLogin.log_off = datetime.datetime.utcnow()
+   db.session.add(earliestLogin)
+   db.session.commit()
+
+def addQueryRecord(querytext, queryresult):
+    query = QueryRecord()
+    query.user_id = current_user.getUname()
+    query.query_text = querytext
+    query.query_result = queryresult
+    db.session.add(query)
+    db.session.commit()
 
 def secureResponse(render):
     response = make_response(render)
@@ -119,13 +163,11 @@ def register():
     if form.validate_on_submit():
         # return redirect('/success')
 
-        global userDict
-
         user = form.uname.data
         pword = form.pword.data
         twofa = form.twofa.data
 
-        if (userExists(user)) or (not user) or (not pword):
+        if (load_user(user)) or (not user) or (not pword):
             return secureResponse(render_template('registrationResult.html', success="Failure"))
         else:
             addUser(user, pword, twofa)
@@ -146,10 +188,12 @@ def login():
         pword = form.pword.data
         twofa = form.twofa.data
 
-        if userExists(user):
-            if passwordMatch(user, pword):
-                if twofaMatch(user, twofa):
-                    login_user(getUser(user))
+        theUser = load_user(user)
+        if theUser:
+            if passwordMatch(theUser, pword):
+                if twofaMatch(theUser, twofa):
+                    login_user(theUser, remember=True)
+                    addLogonRecord(theUser.uname)
                     return secureResponse(render_template('loginResult.html', result="Success"))
                 else:
                     return secureResponse(render_template('loginResult.html', result="Two-factor Failure"))
@@ -162,7 +206,9 @@ def login():
 
 @app.route('/logout')
 def logout():
-    logout_user()
+    if current_user.is_authenticated:
+        updateLogonRecordAtLogoff(current_user.getUname())
+        logout_user()
     return redirect('/login')
 
 
@@ -191,6 +237,8 @@ def spellcheck():
         os.remove("tempUserInput")
 
         misspelledOut = output.replace("\n", ", ").strip().strip(',')
+
+        addQueryRecord(text, misspelledOut)
 
         return secureResponse(render_template('spellCheckResult.html', misspelled=misspelledOut, textout=text))
 
