@@ -148,10 +148,10 @@ def addQueryRecord(querytext, queryresult):
 
 def secureResponse(render):
     response = make_response(render)
-    response.headers['X-XSS-Protection'] = '1; mode=block'
+    #response.headers['X-XSS-Protection'] = '1; mode=block'
     #response.headers['Content-Security-Policy'] = "default-src '127.0.0.1:5000'"
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    #response.headers['X-Content-Type-Options'] = 'nosniff'
+    #response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     return response
 
 @app.errorhandler(404)
