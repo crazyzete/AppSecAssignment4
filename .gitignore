@@ -3,3 +3,5 @@
 a.out
 wordlist.txt
 /static/
+/__pycache__/
+/.idea/
