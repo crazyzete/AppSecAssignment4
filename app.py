@@ -216,7 +216,7 @@ class AdminHistoryForm(FlaskForm):
     userquery = StringField('Username to Query:', validators=[DataRequired()])
 
 @app.route('/history/query<int:query_number>')
-#@login_required
+@login_required
 def queryReview(query_number):
     record = QueryRecord.query.filter_by(record_number=query_number).first()
 
@@ -229,7 +229,7 @@ def queryReview(query_number):
         return secureResponse(render_template('QueryNotAuthorized.html'))
 
 @app.route('/history', methods=('GET', 'POST'))
-#@login_required
+@login_required
 def history():
 
     form = AdminHistoryForm()
@@ -246,7 +246,7 @@ def history():
     return secureResponse(render_template('recordResults.html', records=results, count=results.count()))
 
 @app.route('/login_history', methods=('GET', 'POST'))
-#@login_required
+@login_required
 def login_history():
 
     form = AdminHistoryForm()
