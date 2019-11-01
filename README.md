@@ -1,5 +1,5 @@
-# AppSecAssignment2 Flask Spell Checker
-NYU Application Security Fall 2019 Assignment 3 - Flask SpellChecker - MATTHEW R. HIBSHMAN (mrh583@nyu.edu)
+# AppSecAssignment3 Flask Spell Checker with Database
+NYU Application Security Fall 2019 Assignment 3 - Flask SpellChecker with Database - MATTHEW R. HIBSHMAN (mrh583@nyu.edu)
 
 Travis CI Status:
 
