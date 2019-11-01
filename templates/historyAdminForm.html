@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin History Form </title>
+</head>
+<body>
+    <H1> Spell Check Admin History View:</H1>
+
+    <form method="POST" action="/history">
+    {{ form.csrf_token }}
+    {{ form.userquery.label }} {{ form.userquery(size=40) }}
+    <input type="submit" value="Submit">
+
+</form>
+</body>
+</html>

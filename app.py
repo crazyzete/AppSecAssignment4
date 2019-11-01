@@ -80,18 +80,23 @@ class QueryRecord(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     query_text = db.Column(db.Text, nullable=True)
     query_result  = db.Column(db.Text, nullable=True)
+    time = db.Column(db.DateTime, nullable=False)
     user = db.relationship(User)
 
 
-
+@login_manager.user_loader
+def load_user(id):
+    existing_user = User.query.filter_by(uname=id).first()
+    return existing_user
 
 with app.app_context():
     db.init_app(app)
     db.create_all()
-    adminUser = User('admin', sha256_crypt.hash('Administrator@1'), '12345678901')
-    adminUser.isAdmin = True
-    db.session.add(adminUser)
-    db.session.commit()
+    if not load_user('admin'):
+         adminUser = User('admin', sha256_crypt.hash('Administrator@1'), '12345678901')
+         adminUser.isAdmin = True
+         db.session.add(adminUser)
+         db.session.commit()
 
 class UserForm(FlaskForm):
     uname = StringField('User Name:', validators=[DataRequired()])
@@ -119,11 +124,6 @@ def twofaMatch(user, twofa):
         return False
 
 
-@login_manager.user_loader
-def load_user(id):
-    existing_user = User.query.filter_by(uname=id).first()
-    return existing_user
-
 def addLogonRecord(uname):
     record = LoginRecord()
     record.user_id = uname
@@ -142,6 +142,7 @@ def addQueryRecord(querytext, queryresult):
     query.user_id = current_user.getUname()
     query.query_text = querytext
     query.query_result = queryresult
+    query.time = datetime.datetime.utcnow()
     db.session.add(query)
     db.session.commit()
 
@@ -210,6 +211,27 @@ def logout():
         updateLogonRecordAtLogoff(current_user.getUname())
         logout_user()
     return redirect('/login')
+
+class AdminHistoryForm(FlaskForm):
+    userquery = StringField('Username to Query:', validators=[DataRequired()])
+
+@app.route('/history', methods=('GET', 'POST'))
+@login_required
+def history():
+
+    form = AdminHistoryForm()
+
+    uname = current_user.getUname()
+
+    if current_user.isAdmin and form.validate_on_submit():
+        uname = form.userquery.data
+    elif current_user.isAdmin:
+        return  secureResponse(render_template('historyAdminForm.html', form=form))
+
+    results = QueryRecord.query.filter_by(user_id=uname).order_by(QueryRecord.record_number)
+
+    return secureResponse(render_template('recordResults.html', records=results))
+
 
 
 class spellCheckForm(FlaskForm):

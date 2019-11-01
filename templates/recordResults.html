@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Record Results</title>
+</head>
+<body>
+
+  <h2> Here are the records:  </h2>
+ {% block content %}
+    {% for r in records %}
+       <a id='query{{ r.record_number }}' href="/history/query{{ r.record_number }}">  Record {{ r.record_number }}  </a> <br>
+    {% endfor %}
+ {% endblock %}
+
+</body>
+</html>
