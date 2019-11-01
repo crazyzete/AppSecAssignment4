@@ -148,10 +148,10 @@ def addQueryRecord(querytext, queryresult):
 
 def secureResponse(render):
     response = make_response(render)
-    #response.headers['X-XSS-Protection'] = '1; mode=block'
-    #response.headers['Content-Security-Policy'] = "default-src '127.0.0.1:5000'"
-    #response.headers['X-Content-Type-Options'] = 'nosniff'
-    #response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src '127.0.0.1:5000'"
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     return response
 
 @app.errorhandler(404)
@@ -216,7 +216,7 @@ class AdminHistoryForm(FlaskForm):
     userquery = StringField('Username to Query:', validators=[DataRequired()])
 
 @app.route('/history/query<int:query_number>')
-@login_required
+#@login_required
 def queryReview(query_number):
     record = QueryRecord.query.filter_by(record_number=query_number).first()
 
@@ -229,7 +229,7 @@ def queryReview(query_number):
         return secureResponse(render_template('QueryNotAuthorized.html'))
 
 @app.route('/history', methods=('GET', 'POST'))
-@login_required
+#@login_required
 def history():
 
     form = AdminHistoryForm()
@@ -246,12 +246,16 @@ def history():
     return secureResponse(render_template('recordResults.html', records=results, count=results.count()))
 
 @app.route('/login_history', methods=('GET', 'POST'))
-@login_required
+#@login_required
 def login_history():
 
     form = AdminHistoryForm()
 
-    uname = current_user.getUname()
+    if current_user.is_anonymous:
+        return secureResponse(render_template('QueryNotAuthorized.html'))
+    else:
+        uname = current_user.getUname()
+    
 
     if current_user.isAdmin and form.validate_on_submit():
         results = LoginRecord.query.filter_by(user_id=form.userquery.data).order_by(LoginRecord.record_number)
