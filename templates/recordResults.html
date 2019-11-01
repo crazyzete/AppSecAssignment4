@@ -7,6 +7,7 @@
 <body>
 
   <h2> Here are the records:  </h2>
+  <p id="numqueries"> Count: {{ count }}</p> <br>
  {% block content %}
     {% for r in records %}
        <a id='query{{ r.record_number }}' href="/history/query{{ r.record_number }}">  Record {{ r.record_number }}  </a> <br>

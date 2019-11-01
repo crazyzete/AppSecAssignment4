@@ -243,7 +243,7 @@ def history():
 
     results = QueryRecord.query.filter_by(user_id=uname).order_by(QueryRecord.record_number)
 
-    return secureResponse(render_template('recordResults.html', records=results))
+    return secureResponse(render_template('recordResults.html', records=results, count=results.count()))
 
 @app.route('/login_history', methods=('GET', 'POST'))
 @login_required
