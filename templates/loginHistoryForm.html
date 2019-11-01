@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login History Form </title>
+</head>
+<body>
+    <H1> Spell Check Login History View:</H1>
+
+    <form method="POST" action="/login_history">
+    {{ form.csrf_token }}
+    {{ form.userquery.label }} {{ form.userquery(size=40) }}
+    <input type="submit" value="Submit">
+
+</form>
+</body>
+</html>

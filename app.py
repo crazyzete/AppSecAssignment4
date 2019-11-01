@@ -215,6 +215,19 @@ def logout():
 class AdminHistoryForm(FlaskForm):
     userquery = StringField('Username to Query:', validators=[DataRequired()])
 
+@app.route('/history/query<int:query_number>')
+@login_required
+def queryReview(query_number):
+    record = QueryRecord.query.filter_by(record_number=query_number).first()
+
+    if record is None:
+        return secureResponse(render_template('QueryNotFound.html'))
+    elif current_user.isAdmin or (record.user_id == current_user.getUname()):
+        return secureResponse(render_template('queryReview.html', query_number=record.record_number, uname=record.user_id,
+                                              text=record.query_text, results=record.query_result))
+    else:
+        return secureResponse(render_template('QueryNotAuthorized.html'))
+
 @app.route('/history', methods=('GET', 'POST'))
 @login_required
 def history():
@@ -232,6 +245,21 @@ def history():
 
     return secureResponse(render_template('recordResults.html', records=results))
 
+@app.route('/login_history', methods=('GET', 'POST'))
+@login_required
+def login_history():
+
+    form = AdminHistoryForm()
+
+    uname = current_user.getUname()
+
+    if current_user.isAdmin and form.validate_on_submit():
+        results = LoginRecord.query.filter_by(user_id=form.userquery.data).order_by(LoginRecord.record_number)
+        return secureResponse(render_template('loginHistory.html', records=results))
+    elif current_user.isAdmin:
+        return  secureResponse(render_template('loginHistoryForm.html', form=form))
+    else:
+        return secureResponse(render_template('QueryNotAuthorized.html'))
 
 
 class spellCheckForm(FlaskForm):

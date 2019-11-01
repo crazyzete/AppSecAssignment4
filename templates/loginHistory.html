@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login History</title>
+</head>
+<body>
+
+  <h2> User Login History:  </h2>
+ {% block content %}
+     <ul>
+    {% for r in records %}
+        <li id="login{{ r.record_number }}"> Login Record {{  r.record_number }}:
+           <p id="login{{ r.record_number }}_time"> Login Time:  {{ r.log_on }}</p>
+           <p id="logout{{ r.record_number }}_time"> Logout Time:
+               {% if r.log_off %}
+                  {{ r.log_off }}
+                {% else %}
+                   N/A
+                {%endif %}
+           </p>
+        </li>
+    {% endfor %}
+     </ul>
+ {% endblock %}
+
+</body>
+</html>

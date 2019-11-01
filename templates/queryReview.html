@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Query Review {{ query_number }}</title>
+</head>
+<body>
+
+  <h2> Here is your query record:  </h2>
+  <p id="queryid"> Query Number: {{query_number}} </p>
+  <p id="username"> User: {{uname}} </p>
+
+  <br>
+  <br>
+
+  <h2> Query Input Text </h2>
+  <p id="querytext"> {{ text }} </p>
+
+  <br>
+  <br>
+
+  <h2> Query Results: </h2>
+  <p id="queryresults"> {{ results }} </p>
+
+</body>
+</html>
