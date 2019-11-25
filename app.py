@@ -14,13 +14,26 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
+# Load Secrets
+# Load App Key
+secret_file = open("/run/secrets/spell_check_app_key", "r")
+app.secret_key = secret_file.read().strip()
+secret_file.close()
+# Load Admin pword
+secret_file = open("/run/secrets/spell_check_admin_password", "r")
+admin_password = secret_file.read().strip()
+secret_file.close()
+# Load Admin 2fa
+secret_file = open("/run/secrets/spell_check_admin_2fa", "r")
+admin_2fa = secret_file.read().strip()
+secret_file.close()
+
 
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-app.secret_key = secrets.token_urlsafe(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///theDB.db'
 
 csrf = CSRFProtect(app)
@@ -93,7 +106,7 @@ with app.app_context():
     db.init_app(app)
     db.create_all()
     if not load_user('admin'):
-         adminUser = User('admin', sha256_crypt.hash('Administrator@1'), '12345678901')
+         adminUser = User('admin', sha256_crypt.hash(admin_password), admin_2fa)
          adminUser.isAdmin = True
          db.session.add(adminUser)
          db.session.commit()

@@ -1,0 +1,28 @@
+version: '3.7'
+services:
+  web:
+     image: spellcheck
+     build: .
+     deploy:
+        mode: replicated
+        replicas: 4
+        resources:
+            limits:
+              cpus: "0.25"
+              memory: 100M
+     ports:
+         - "8080:5000"
+     secrets:
+         - spell_check_app_key
+         - spell_check_admin_password
+         - spell_check_admin_2fa
+
+secrets:
+    spell_check_app_key:
+        external: true
+    spell_check_admin_password:
+        external: true
+    spell_check_admin_2fa:
+        external: true
+
+  

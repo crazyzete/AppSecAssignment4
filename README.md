@@ -1,6 +1,3 @@
-# AppSecAssignment3 Flask Spell Checker with Database
-NYU Application Security Fall 2019 Assignment 3 - Flask SpellChecker with Database - MATTHEW R. HIBSHMAN (mrh583@nyu.edu)
+# AppSecAssignment4 Docker Container Spell Checker
+NYU Application Security Fall 2019 Assignment 4 - Docker Container Spell Checker - MATTHEW R. HIBSHMAN (mrh583@nyu.edu)
 
-Travis CI Status:
-
-[![Build Status](https://www.travis-ci.com/crazyzete/AppSecAssignment3.svg?branch=master)](https://www.travis-ci.com/crazyzete/AppSecAssignment3)
